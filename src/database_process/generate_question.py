@@ -1,6 +1,7 @@
 """
 Generate questions for LLMs and save it as a task
 """
+# 准备少样本示例和模式
 import argparse
 import os,re
 import sys

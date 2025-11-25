@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Any
 from runner.execution import compare_sqls
 
-
+# 核心处理pipeline Modules
 class DatabaseManager:
     """
     A singleton class to manage database operations including schema generation, 
