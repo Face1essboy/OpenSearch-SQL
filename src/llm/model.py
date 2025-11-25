@@ -3,6 +3,7 @@ import dashscope
 import torch
 import json
 import re
+import os
 from runner.logger import Logger
 from llm.prompts import prompts_fewshot_parse
 
@@ -14,13 +15,15 @@ def model_chose(step, model="gpt-4 32K"):
         return gpt_req(step, model)
     # DeepSeek API
     if model == "deepseek":
-        return deep_seek(model)
+        return deep_seek(step,model)
     # QwenMax API
     if model.startswith("qwen"):
-        return qwenmax(model)
+        return qwen(step,model)
     # SFT本地微调模型
     if model.startswith("sft"):
         return sft_req()
+    else:
+        raise ValueError(f"Unsupported model: {model}")
 
 # 各大模型统一的基类：req
 class req:
@@ -54,205 +57,170 @@ class req:
             s = s.replace(f"{li[1]}.", f"{li[0]}.")
         return t + "#SELECT:" + s + "#values:" + v
 
-# 通用请求方法，适配多模型API接口，仅用于gpt_req
+# 通用请求方法，适配多模型API接口
 def request(url, model, messages, temperature, top_p, n, key, **k):
-    res = requests.post(
-        url=url,
-        json={
-            "model": model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are an SQL expert, skilled in handling various SQL-related issues."
-                },
-                {
-                    "role": "user",
-                    "content": messages
-                }
-            ],
-            "max_tokens": 800,
-            "temperature": temperature,
-            "top_p": top_p,
-            "n": n,
-            **k
-        },
-        headers={
-            "Authorization": key
-        }
-    ).json()
-    return res
+    """
+    重构：统一使用 OpenAI 兼容格式 (目前 DeepSeek, Qwen, GPT 都支持此格式)
+    """
+    # 构造标准 OpenAI 格式 Messages
+    if isinstance(messages, str):
+        msg_list = [
+            {"role": "system", "content": "You are an SQL expert."},
+            {"role": "user", "content": messages}
+        ]
+    else:
+        msg_list = messages
+
+    body = {
+        "model": model,
+        "messages": msg_list,
+        "max_tokens": 800,
+        "temperature": temperature,
+        "n": n,
+        **k # 允许传入 stream 等其他参数
+    }
+    
+    # 只有当 top_p 不为 None 时才加入，避免某些 API 报错
+    if top_p is not None:
+        body["top_p"] = top_p
+
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post(url=url, json=body, headers=headers, timeout=60)
+        response.raise_for_status() # 检查 HTTP 状态码
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed: {e}")
+        return None
+    except Exception as e:
+        print(f"JSON decode failed or other error: {e}")
+        return None
 
 # OpenAI 的 GPT 模型、Anthropic 的 Claude 和 Google 的 Gemini 的请求：
 class gpt_req(req):
-    def __init__(self, step, model="gpt-4o-0513") -> None:
+    def __init__(self, step, model="gpt-4o") -> None:
         super().__init__(step, model)
+        self.api_key = ""
+        # 填入正确的 URL
+        self.url = "https://api.openai.com/v1/chat/completions"
 
-    # 核心请求方法，支持重试，并返回结果
     def get_ans(self, messages, temperature=0.0, top_p=None, n=1, single=True, **k):
+        return self._unified_get_ans(messages, temperature, top_p, n, single, 
+                                     price_prompt=0.042, price_completion=0.126, **k)
+
+    # 提取公共重试逻辑到父类或辅助方法是个好习惯，这里暂时放在类内
+    def _unified_get_ans(self, messages, temperature, top_p, n, single, price_prompt, price_completion, **k):
         count = 0
-        while count < 50:
-            try:
-                res = request(
-                    url="",
-                    model=self.model,
-                    messages=messages,
-                    temperature=temperature,
-                    top_p=top_p,
-                    n=n, key="",
-                    **k
-                )
+        while count < 5: # 减少重试次数，50次太夸张
+            res = request(
+                url=self.url,
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                top_p=top_p,
+                n=n,
+                key=self.api_key,
+                **k
+            )
+            
+            if res and "choices" in res:
+                if "usage" in res:
+                    self.Cost += res["usage"].get('prompt_tokens', 0) / 1000 * price_prompt + \
+                                 res["usage"].get("completion_tokens", 0) / 1000 * price_completion
+                
+                output = res["choices"]
                 if n == 1 and single:
-                    response_clean = res["choices"][0]["message"]["content"]
-                else:
-                    response_clean = res["choices"]
-                # 仅prepare_train_queries阶段不记录日志
-                if self.step != "prepare_train_queries":
-                    self.log_record(messages, response_clean)
-                break
-            except Exception as e:
-                count += 1
-                time.sleep(2)
-                print(e, count, self.Cost, res)
-        # 记录token消耗
-        self.Cost += res["usage"]['prompt_tokens'] / 1000 * 0.042 + res["usage"]["completion_tokens"] / 1000 * 0.126
-        return response_clean
+                    content = output[0]["message"]["content"]
+                    if self.step != "prepare_train_queries":
+                        self.log_record(messages, content)
+                    return content
+                return output
+            
+            # 如果失败
+            count += 1
+            print(f"Retry {count}: {res}")
+            time.sleep(2)
+        return None
 
 # DeepSeek大模型API请求封装
-class deep_seek(req):
-    def __init__(self, model) -> None:
-        super().__init__(model)
-
-    def get_ans(self, messages, temperature=0.0, debug=False):
-        count = 0
-        while count < 8:
-            try:
-                url = "https://api.deepseek.com/chat/completions"
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": ""
-                }
-                # 定义请求体
-                jsons = {
-                    "model": "deepseek-coder",
-                    "temperture": temperature,  # 注意：写错温度字段名
-                    "top_p": 0.9,
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful assistant."},
-                        {"role": "user", "content": messages}
-                    ]
-                }
-                # 发送POST请求
-                response = requests.post(url, headers=headers, json=jsons)
-                if debug:
-                    print(response.json)
-                ans = response.json()['choices'][0]['message']['content']
-                break
-            except Exception as e:
-                count += 1
-                time.sleep(2)
-                print(e, count, self.Cost, response.json())
-        return ans
-
-# Qwen Max API
-class qwenmax(req):
-    def __init__(self, model) -> None:
-        super().__init__(model)
-        # 在此处填写你的Qwen API Key
+class deep_seek(gpt_req): # 继承 gpt_req 复用逻辑
+    def __init__(self, step, model="deepseek-chat") -> None:
+        # 注意：这里调用的是 req 的 init，因为 gpt_req 的 init 硬编码了 url
+        req.__init__(self, step, model) 
         self.api_key = ""
+        self.url = "[https://api.deepseek.com/chat/completions](https://api.deepseek.com/chat/completions)"
 
-    def get_ans(self, messages, temperature=0.0, debug=False):
-        count = 0
-        ans = None
-        url = "https://api.aliyun.com/qwen/v1/chat/completions"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
-        }
-        while count < 8:
-            try:
-                payload = {
-                    "model": self.model,  # 例如："qwen-32b-chat"
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "You are an AI assistant able to answer SQL or code-related questions."
-                        },
-                        {
-                            "role": "user",
-                            "content": messages
-                        }
-                    ],
-                    "temperature": temperature,
-                    "top_p": 0.9,
-                    "max_tokens": 800,
-                }
-                response = requests.post(url, headers=headers, json=payload)
-                if debug:
-                    print(response.text)
-                response_json = response.json()
-                ans = response_json["choices"][0]["message"]["content"]
-                # 统计token信息，如果接口返回了usage
-                if "usage" in response_json:
-                    usage = response_json["usage"]
-                    self.Cost += usage.get("prompt_tokens", 0) / 1000 * 0.04 + usage.get("completion_tokens", 0) / 1000 * 0.12
-                break
-            except Exception as e:
-                count += 1
-                time.sleep(5)
-                print(e)
-        return ans
+    def get_ans(self, messages, temperature=0.0, top_p=None, n=1, single=True, **k):
+        # DeepSeek 价格便宜很多
+        return self._unified_get_ans(messages, temperature, top_p, n, single, 
+                                     price_prompt=0.001, price_completion=0.002, **k)
 
-# SFT本地自定义微调大模型推理接口
-class sft_req(req):
-    def __init__(self, model) -> None:
-        super().__init__(model)
-        self.device = "cuda:0"
-        # 加载本地Tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "",
-            trust_remote_code=True,
-            padding_side="right",
-            use_fast=True)
-        self.tokenizer.pad_token = self.tokenizer.eos_token = "<|EOT|>"
-        # 加载本地推理模型
-        self.model = AutoModelForCausalLM.from_pretrained(
-            "",
-            torch_dtype=torch.bfloat16,
-            device_map=self.device).eval()
+# Qwen Max API请求封装，适配request函数
+class qwen(gpt_req): # 继承 gpt_req 复用逻辑
+    def __init__(self, step, model="qwen") -> None:
+        req.__init__(self, step, model)
+        self.api_key = ""
+        self.url = "[https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions](https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions)"
 
-    # 本地模型推理
-    def get_ans(self, text, temperature=0.0):
-        messages = [{
-            "role": "system",
-            "content": (
-                "You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, "
-                "and you only answer questions related to computer science. For politically sensitive questions, "
-                "security and privacy issues, and other non-computer science questions, you will refuse to answer."
-            )
-        }, {
-            "role": "user",
-            "content": text
-        }]
-        # 处理prompt生成inputs
-        inputs = self.tokenizer.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=False)
-        model_inputs = self.tokenizer([inputs],
-                                      return_tensors="pt",
-                                      max_length=8000).to("cuda")
-        # tokenizer.eos_token_id is the id of <|EOT|> token
-        generated_ids = self.model.generate(
-            model_inputs.input_ids,
-            attention_mask=model_inputs["attention_mask"],
-            max_new_tokens=800,
-            do_sample=False,
-            eos_token_id=self.tokenizer.eos_token_id,
-            pad_token_id=self.tokenizer.pad_token_id)
-        generated_ids = [
-            output_ids[len(input_ids):] for input_ids, output_ids in zip(
-                model_inputs.input_ids, generated_ids)
-        ]
-        response = self.tokenizer.decode(generated_ids[0][:-1],
-                                         skip_special_tokens=True).strip()
-        return response
+    def get_ans(self, messages, temperature=0.0, top_p=None, n=1, single=True, **k):
+        return self._unified_get_ans(messages, temperature, top_p, n, single, 
+                                     price_prompt=0.04, price_completion=0.12, **k)
+
+# # SFT本地自定义微调大模型推理接口
+# class sft_req(req):
+#     def __init__(self, model) -> None:
+#         super().__init__(model)
+#         self.device = "cuda:0"
+#         # 加载本地Tokenizer
+#         self.tokenizer = AutoTokenizer.from_pretrained(
+#             "",
+#             trust_remote_code=True,
+#             padding_side="right",
+#             use_fast=True)
+#         self.tokenizer.pad_token = self.tokenizer.eos_token = "<|EOT|>"
+#         # 加载本地推理模型
+#         self.model = AutoModelForCausalLM.from_pretrained(
+#             "",
+#             torch_dtype=torch.bfloat16,
+#             device_map=self.device).eval()
+
+#     # 本地模型推理
+#     def get_ans(self, text, temperature=0.0):
+#         messages = [{
+#             "role": "system",
+#             "content": (
+#                 "You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, "
+#                 "and you only answer questions related to computer science. For politically sensitive questions, "
+#                 "security and privacy issues, and other non-computer science questions, you will refuse to answer."
+#             )
+#         }, {
+#             "role": "user",
+#             "content": text
+#         }]
+#         # 处理prompt生成inputs
+#         inputs = self.tokenizer.apply_chat_template(
+#             messages,
+#             add_generation_prompt=True,
+#             tokenize=False)
+#         model_inputs = self.tokenizer([inputs],
+#                                       return_tensors="pt",
+#                                       max_length=8000).to("cuda")
+#         # tokenizer.eos_token_id is the id of <|EOT|> token
+#         generated_ids = self.model.generate(
+#             model_inputs.input_ids,
+#             attention_mask=model_inputs["attention_mask"],
+#             max_new_tokens=800,
+#             do_sample=False,
+#             eos_token_id=self.tokenizer.eos_token_id,
+#             pad_token_id=self.tokenizer.pad_token_id)
+#         generated_ids = [
+#             output_ids[len(input_ids):] for input_ids, output_ids in zip(
+#                 model_inputs.input_ids, generated_ids)
+#         ]
+#         response = self.tokenizer.decode(generated_ids[0][:-1],
+#                                          skip_special_tokens=True).strip()
+#         return response
