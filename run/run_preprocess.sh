@@ -8,17 +8,17 @@ fewshot_llm=gpt-4o-0513
 DAIL_SQL=Bird/bird_dev.json     #dailsql json file 
 bert_model=bge/ 
 
-python -u src/database_process/data_preprocess.py \
-    --db_root_directory "${db_root_directory}" \
-    --dev_json "${dev_json}" \
-    --train_json "${train_json}" \
-    --dev_table "${dev_table}" \
-    --train_table "${train_table}"
-
-
-# python -u src/database_process/prepare_train_queries.py \
+# python -u src/database_process/data_preprocess.py \
 #     --db_root_directory "${db_root_directory}" \
-#     --model "${fewshot_llm}" 
+#     --dev_json "${dev_json}" \
+#     --train_json "${train_json}" \
+#     --dev_table "${dev_table}" \
+#     --train_table "${train_table}"
+
+
+python -u src/database_process/prepare_train_queries.py \
+    --db_root_directory "${db_root_directory}" \
+    --model "${fewshot_llm}" 
 
 
 # python -u src/database_process/generate_question.py \
