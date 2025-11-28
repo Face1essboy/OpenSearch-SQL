@@ -95,13 +95,13 @@ pipeline_setup='{
     "candidate_generate":{
         "engine": "'${engine1}'",
         "temperature": 0.7,  
-        "n":21,
+        "n":8,
         "return_question":"True",
         "single":"False"
     },
     "align_correct":{
         "engine": "'${engine1}'",
-        "n":21,
+        "n":8,
         "bert_model": "your_bert_model_path:e.g. /opensearch-sql/bge",  
         "device":"cpu",
         "align_methods":"style_align+function_align+agent_align"

@@ -7,6 +7,7 @@ import os
 from runner.logger import Logger
 from llm.prompts import prompts_fewshot_parse
 
+# todo add api_key
 # 选择不同大模型调用方式，根据传入参数选择gpt/qwen/deepseek/sft等
 # 最终返回一个LLM实例对象
 def model_chose(step, model="gpt-4 32K"):
@@ -19,9 +20,9 @@ def model_chose(step, model="gpt-4 32K"):
     # QwenMax API
     if model.startswith("qwen"):
         return qwen(step,model)
-    # SFT本地微调模型
-    if model.startswith("sft"):
-        return sft_req()
+    # # SFT本地微调模型
+    # if model.startswith("sft"):
+    #     return sft_req()
     else:
         raise ValueError(f"Unsupported model: {model}")
 
@@ -115,7 +116,7 @@ class gpt_req(req):
     # 提取公共重试逻辑到父类或辅助方法是个好习惯，这里暂时放在类内
     def _unified_get_ans(self, messages, temperature, top_p, n, single, price_prompt, price_completion, **k):
         count = 0
-        while count < 5: # 减少重试次数，50次太夸张
+        while count < 8:
             res = request(
                 url=self.url,
                 model=self.model,

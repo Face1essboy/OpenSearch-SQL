@@ -903,6 +903,7 @@ SQL: {sql}
 #answer:
 """
 
+
 prompts_fewshot_parse2="""/* extract and rewrite example */
 #question: Please give the name of the course in which most numbers of the students got an A. Also, list the full name of the students who got an A in this course. most number of students got an A refers MAX(COUNT(student_id WHERE grade = 'A')); full name = f_name, l_name; got an A refers to grade = 'A';
 SQL: SELECT T3.name, T2.f_name, T2.l_name FROM registration AS T1 INNER JOIN student AS T2 ON T1.student_id = T2.student_id INNER JOIN course AS T3 ON T1.course_id = T3.course_id WHERE T1.grade = 'A' GROUP BY T3.name ORDER BY COUNT(T1.student_id) DESC LIMIT 1

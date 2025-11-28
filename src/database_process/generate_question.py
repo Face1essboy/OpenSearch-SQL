@@ -20,6 +20,7 @@ def extract_question_section(text):
     
 
 def generate_questions_and_estimates(db_root_directory, DAIL_SQL):
+    # 从generate_question.py预处理生成的训练数据
     fewshot_parse_json=Path(db_root_directory,'llm_train_parse.json')
     dev_json = os.path.join(args.db_root_directory, 'data_preprocess', 'dev.json')   
     dailsql_json=DAIL_SQL
