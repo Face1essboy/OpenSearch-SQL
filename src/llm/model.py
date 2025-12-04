@@ -116,7 +116,7 @@ class gpt_req(req):
     # 提取公共重试逻辑到父类或辅助方法是个好习惯，这里暂时放在类内
     def _unified_get_ans(self, messages, temperature, top_p, n, single, price_prompt, price_completion, **k):
         count = 0
-        while count < 8:
+        while count < 3:
             res = request(
                 url=self.url,
                 model=self.model,
@@ -132,7 +132,6 @@ class gpt_req(req):
                 if "usage" in res:
                     self.Cost += res["usage"].get('prompt_tokens', 0) / 1000 * price_prompt + \
                                  res["usage"].get("completion_tokens", 0) / 1000 * price_completion
-                
                 output = res["choices"]
                 if n == 1 and single:
                     content = output[0]["message"]["content"]
@@ -158,18 +157,18 @@ class deep_seek(gpt_req): # 继承 gpt_req 复用逻辑
     def get_ans(self, messages, temperature=0.0, top_p=None, n=1, single=True, **k):
         # DeepSeek 价格便宜很多
         return self._unified_get_ans(messages, temperature, top_p, n, single, 
-                                     price_prompt=0.001, price_completion=0.002, **k)
+                                     price_prompt=0.8, price_completion=2, **k)
 
-# Qwen Max API请求封装，适配request函数
+# Qwen Plus API请求封装，适配request函数
 class qwen(gpt_req): # 继承 gpt_req 复用逻辑
     def __init__(self, step, model="qwen") -> None:
         req.__init__(self, step, model)
-        self.api_key = ""
-        self.url = "[https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions](https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions)"
+        self.api_key = "sk-3eb742aae22641d7854972ff601a782f"
+        self.url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 
     def get_ans(self, messages, temperature=0.0, top_p=None, n=1, single=True, **k):
         return self._unified_get_ans(messages, temperature, top_p, n, single, 
-                                     price_prompt=0.04, price_completion=0.12, **k)
+                                     price_prompt=0.0008, price_completion=0.002, **k)
 
 # # SFT本地自定义微调大模型推理接口
 # class sft_req(req):

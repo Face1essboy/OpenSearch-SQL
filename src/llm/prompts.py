@@ -38,6 +38,7 @@ class prompts_wo_hint_only_sqllike_reparse_ext_atom_step(prompts1):# deepseek 68
     correct_prompt=all_prompt.correct_prompt_wo_hint
     soft_prompt=all_prompt.soft_prompt
 
+
 class db_check_prompts(prompts_wo_hint_only_sqllike_reparse_ext_atom_step):
     extract_prompt=all_prompt.new_extract_prompt
     extract_prompt_wofewshot=all_prompt.new_extract_prompt_wofewshot

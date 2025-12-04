@@ -4,7 +4,7 @@ train_json=train/train.json
 dev_table=dev/dev_tables.json  # 11 dev data
 train_table=train/train_tables.json  # 69 train data
 dev_database=dev/dev_databases #dev database directory
-fewshot_llm=gpt-4o-0513
+fewshot_llm=qwen-plus
 DAIL_SQL=Bird/bird_dev.json     #dailsql json file 
 bert_model=bge/ 
 
@@ -16,9 +16,9 @@ bert_model=bge/
 #     --train_table "${train_table}"
 
 
-python -u src/database_process/prepare_train_queries.py \
-    --db_root_directory "${db_root_directory}" \
-    --model "${fewshot_llm}" 
+# python -u src/database_process/prepare_train_queries.py \
+#     --db_root_directory "${db_root_directory}" \
+#     --model "${fewshot_llm}" 
 
 
 # python -u src/database_process/generate_question.py \
@@ -26,7 +26,7 @@ python -u src/database_process/prepare_train_queries.py \
 #     --DAIL_SQL "${DAIL_SQL}" 
 
 
-# python -u src/database_process/make_emb.py \
-#     --db_root_directory "${db_root_directory}" \
-#     --dev_database "${dev_database}" \
-#     --bert_model "${bert_model}"
+python -u src/database_process/make_emb.py \
+    --db_root_directory "${db_root_directory}" \
+    --dev_database "${dev_database}" \
+    --bert_model "${bert_model}"
