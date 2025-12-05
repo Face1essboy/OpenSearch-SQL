@@ -61,5 +61,3 @@ def get_des_ans(chat_model,
                                         debug=debug).replace('```', '')
 
     return pre_col_values
-
-
