@@ -47,5 +47,6 @@ class Task:
         self.question=(self.raw_question+" "+self.evidence).strip()
         if self.evidence=="":
             self.evidence="None"#问题1
-        # self.question_toks=task_data["question_toks"]
-        # self.query=task_data["query"]
+        # 显式初始化这些属性，确保它们存在
+        self.question_toks = task_data.get("question_toks", [])
+        self.query = task_data.get("query", "")

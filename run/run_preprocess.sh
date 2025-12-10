@@ -4,7 +4,7 @@ train_json=train/train.json
 dev_table=dev/dev_tables.json  # 11 dev data
 train_table=train/train_tables.json  # 69 train data
 dev_database=dev/dev_databases #dev database directory
-fewshot_llm=qwen-plus
+fewshot_llm=qwen
 DAIL_SQL=Bird/bird_dev.json     #dailsql json file 
 bert_model=bge/ 
 

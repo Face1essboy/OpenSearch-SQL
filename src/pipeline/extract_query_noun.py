@@ -21,24 +21,32 @@ def extract_query_noun(task: Any,execution_history: Dict[str, Any]) -> Dict[str,
     }
     return response
 
+# [关键注释] — 解析从 LLM 返回的信息中提取出的 columns 和 values，并结合名词短语进行增强
 def parse_des(pre_col_values, nouns, debug):
+    # 去除多余注释和前缀，仅保留关键信息
     pre_col_values = pre_col_values.split("/*")[0].strip()
     if debug:
         print(pre_col_values)
+    # 提取 "columns" 和 "values" 两个关键片段
     col, values = pre_col_values.split('#values:')
     _, col = col.split("#columns:")
     col = strip_char(col)
     values = strip_char(values)
 
+    # [关键注释] — values 若为空，初始化为空列表，否则用正则提取全部引号包裹内容
     if values == '':
         values = []
     else:
         values = re.findall(r"([\"'])(.*?)\1", values)
+
+    # [关键注释] — 提取所有名词及短语，并与原有 values 合并去重
     nouns_all = re.findall(r"([\"'])(.*?)\1", nouns)
     values_noun = set(values).union(set(nouns_all))
     values_noun = [x[1] for x in values_noun]
+
+    # [关键注释] — 返回扩展后的 values_noun 与抽取出的 column 字段
     return values_noun, col
 
-
+# [关键注释] — 简单字符串清理，去除换行和常见无关字符
 def strip_char(s):
     return s.strip('\n {}[]')

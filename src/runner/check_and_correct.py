@@ -30,6 +30,13 @@ def get_sql(chat_model,
             single=True):
     sql = chat_model.get_ans(prompt, temp, top_p=top_p, n=n, single=single)
     # print(sql)
+    # 检查API调用是否失败
+    if sql is None:
+        if single:
+            return None, None
+        else:
+            return None, None
+    
     if single:
         return sql_raw_parse(sql, return_question)
     else:

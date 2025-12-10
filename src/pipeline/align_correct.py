@@ -20,7 +20,7 @@ def align_correct(task: Any,  execution_history: List[Dict[str, Any]]) -> Dict[s
     correct_fewshot_json=paths.db_fewshot2_path
     db_sqlite_path=paths.db_path
     prompts_template=db_check_prompts()
-    bert_model = SentenceTransformer(config["bert_model"], device=config["device"])
+    bert_model = SentenceTransformer("BAAI/bge-m3")  
     with open(fewshot_path) as f:## fewshot
         df_fewshot = json.load(f)
     chat_model = model_chose(node_name,config["engine"])

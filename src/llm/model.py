@@ -94,6 +94,22 @@ def request(url, model, messages, temperature, top_p, n, key, **k):
         response = requests.post(url=url, json=body, headers=headers, timeout=60)
         response.raise_for_status() # 检查 HTTP 状态码
         return response.json()
+    except requests.exceptions.HTTPError as e:
+        # 400 错误时，打印详细的错误信息
+        error_detail = ""
+        try:
+            error_detail = response.json()
+            print(f"HTTP {response.status_code} Error Details: {error_detail}")
+        except:
+            error_detail = response.text[:500]
+            print(f"HTTP {response.status_code} Error Response: {error_detail}")
+        
+        # 打印请求信息以便调试
+        print(f"Request URL: {url}")
+        print(f"Request Model: {model}")
+        print(f"Request n parameter: {n}")
+        print(f"Request body keys: {list(body.keys())}")
+        return {"error": {"message": str(e), "code": response.status_code, "detail": error_detail}}
     except requests.exceptions.RequestException as e:
         print(f"Request failed: {e}")
         return None
@@ -116,7 +132,7 @@ class gpt_req(req):
     # 提取公共重试逻辑到父类或辅助方法是个好习惯，这里暂时放在类内
     def _unified_get_ans(self, messages, temperature, top_p, n, single, price_prompt, price_completion, **k):
         count = 0
-        while count < 3:
+        while count < 7:
             res = request(
                 url=self.url,
                 model=self.model,
@@ -161,7 +177,7 @@ class deep_seek(gpt_req): # 继承 gpt_req 复用逻辑
 
 # Qwen Plus API请求封装，适配request函数
 class qwen(gpt_req): # 继承 gpt_req 复用逻辑
-    def __init__(self, step, model="qwen") -> None:
+    def __init__(self, step, model="qwen-plus") -> None:
         req.__init__(self, step, model)
         self.api_key = "sk-3eb742aae22641d7854972ff601a782f"
         self.url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"

@@ -44,11 +44,18 @@ def candidate_generate(task: Any, execution_history: List[Dict[str, Any]]) -> Di
 
     single = config['single'].lower() == 'true'  # 将字符串转换为布尔值
     return_question=config['return_question']== 'true' 
-    SQL,_ = get_sql(chat_model, new_prompt, config['temperature'], return_question=return_question,n=config['n'],single=single)
-
+    SQL, rewrite_q = get_sql(chat_model, new_prompt, config['temperature'], return_question=return_question,n=config['n'],single=single)
+    
+    # 检查API调用是否失败
+    if SQL is None:
+        raise ValueError(f"LLM API call failed in candidate_generate. API returned None.")
+    
+    # 如果返回了重写的问题，使用它；否则使用原始问题
+    if rewrite_q:
+        question = rewrite_q
     
     response = {
-        "rewrite_question":question,
+        "rewrite_question": question,
         "SQL": SQL
         # "new_prompt":new_prompt
     }

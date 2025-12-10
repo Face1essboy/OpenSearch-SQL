@@ -19,7 +19,7 @@ pipeline_nodes='generate_db_schema+extract_col_value+extract_query_noun+column_r
     # evaluation
 
 # engine1='gpt-4o-0513'
-engine1= 'qwen'
+engine1= 'qwen-plus'
 engine2='gpt-3.5-turbo-0125'
 engine3='gpt-4-turbo'
 engine4='claude-3-opus-20240229'

@@ -87,15 +87,55 @@ class Logger:
         """
         log_file_path = self.result_directory / "logs" / f"{self.question_id}_{self.db_id}.log"
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
-        with log_file_path.open("a") as file:
+        with log_file_path.open("a", encoding='utf-8') as file:
             file.write(f"############################## {_from} at step {step} ##############################\n\n")
             if isinstance(text, str):
                 file.write(text)
             elif isinstance(text, (list, dict)):
-                formatted_text = json.dumps(text, indent=4)
+                formatted_text = json.dumps(text, indent=4, ensure_ascii=False)
                 file.write(formatted_text)
             elif isinstance(text, bool):
                 file.write(str(text))
+            file.write("\n\n")
+    
+    def log_node_output(self, node_name: str, output: Any, execution_history: List[Dict[str, Any]] = None):
+        """
+        Logs a pipeline node output to the log file.
+        
+        Args:
+            node_name (str): The name of the node.
+            output (Any): The output from the node.
+            execution_history (List[Dict[str, Any]], optional): The execution history to extract latest result.
+        """
+        log_file_path = self.result_directory / "logs" / f"{self.question_id}_{self.db_id}.log"
+        log_file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with log_file_path.open("a", encoding='utf-8') as file:
+            file.write(f"\n{'='*80}\n")
+            file.write(f"Node: {node_name}\n")
+            file.write(f"{'='*80}\n")
+            
+            # If we have execution history, show the latest result for this node
+            if execution_history:
+                for node_result in reversed(execution_history):
+                    if node_result.get("node_type") == node_name:
+                        file.write("Latest Result:\n")
+                        try:
+                            file.write(json.dumps(node_result, indent=2, ensure_ascii=False))
+                        except:
+                            file.write(str(node_result))
+                        file.write("\n\n")
+                        break
+            
+            # Log the raw output
+            file.write("Raw Output:\n")
+            try:
+                if isinstance(output, (dict, list)):
+                    file.write(json.dumps(output, indent=2, ensure_ascii=False))
+                else:
+                    file.write(str(output))
+            except:
+                file.write(str(output))
             file.write("\n\n")
 
     def dump_history_to_file(self, execution_history: List[Dict[str, Any]]):
