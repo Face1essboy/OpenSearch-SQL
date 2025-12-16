@@ -14,8 +14,14 @@ from sklearn.metrics.pairwise import euclidean_distances
 import argparse
 import logging
 
-# 设备选择
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+# 设备选择：优先 CUDA，其次 MPS（Apple Silicon），最后 CPU
+if torch.cuda.is_available():
+    device = 'cuda:0'
+elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    device = 'mps'
+else:
+    device = 'cpu'
+logging.info(f"Using device: {device}")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # UUID格式正则，用于过滤

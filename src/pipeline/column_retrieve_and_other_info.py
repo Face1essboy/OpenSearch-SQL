@@ -4,7 +4,7 @@ import json
 from typing import Any, Dict
 from pathlib import Path
 
-from pipeline.utils import node_decorator, get_last_node_result
+from pipeline.utils import node_decorator, get_last_node_result, get_device
 from pipeline.pipeline_manager import PipelineManager
 from runner.database_manager import DatabaseManager
 from sentence_transformers import SentenceTransformer
@@ -35,7 +35,9 @@ def column_retrieve_and_other_info(task: Any, execution_history: Dict[str, Any])
     emb_dir = paths.emb_dir                                # embedding 文件夹路径
     tables_info_dir = paths.db_tables                      # 表结构信息路径
     chat_model = model_chose(node_name, config["engine"])  # 选择LLM模型
-    bert_model = SentenceTransformer("BAAI/bge-m3")        # 句向量模型用于列/值语义检索
+    # 从配置读取设备，如果没有则自动选择最佳设备（CUDA > MPS > CPU）
+    device = get_device(config.get("device"))
+    bert_model = SentenceTransformer("BAAI/bge-m3", device=device)        # 句向量模型用于列/值语义检索
 
     # ========================== 数据准备 ==============================
     all_db_col = get_last_node_result(execution_history, "generate_db_schema")["db_col_dic"] # 数据库所有列映射 {col: [desc, ...], ...}

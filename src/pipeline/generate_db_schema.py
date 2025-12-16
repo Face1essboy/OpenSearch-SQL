@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
-from pipeline.utils import node_decorator
+from pipeline.utils import node_decorator, get_device
 from pipeline.pipeline_manager import PipelineManager
 from runner.database_manager import DatabaseManager
 from llm.model import model_chose
@@ -24,7 +24,9 @@ def generate_db_schema(task: Any, execution_history: Dict[str, Any]) -> Dict[str
     config, node_name = PipelineManager().get_model_para()
     paths = DatabaseManager()
     # [关键注释] — 初始化所需的 bert_model
-    bert_model = SentenceTransformer("BAAI/bge-m3")
+    # 从配置读取设备，如果没有则自动选择最佳设备（CUDA > MPS > CPU）
+    device = get_device(config.get("device"))
+    bert_model = SentenceTransformer("BAAI/bge-m3", device=device)
 
     # [关键注释] — 路径参数
     db_json_dir = paths.db_json            # 数据库结构/表结构描述

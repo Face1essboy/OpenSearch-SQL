@@ -423,6 +423,16 @@ class db_agent_string(db_agent):
             # 加入本字段描述到表结构字符串
             schema_str += f"{column_name}: {schema_str_single}\n"
             # 记录详细字段信息进dict
+
+            # 这些值依次代表：
+            # 列描述和值描述都是csv文件里面给的，不一定都有
+            # 1. `schema_str_single`：每个字段的详细结构描述字符串（含类型、唯一性、空值等说明）
+            # 2. `col_des`：字段（列）的文本描述（如“订单编号”）
+            # 3. `val_des`：该字段典型值的格式或示例描述
+            # 4. `column_type`：字段的数据类型（如INTEGER, TEXT等）
+            # 5. `include_null`：是否允许NULL，取值为"Include Null"/"Non-Null"
+            # 6. `unique`：唯一性，"Unique"或"Non-Unique"
+            # 7. `str(val)`：示例值（或值的样例列表字符串化结果）
             columns[f"{table_name}.{column_name}"] = (
                 schema_str_single,
                 col_des,

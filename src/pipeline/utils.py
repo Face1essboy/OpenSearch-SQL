@@ -2,6 +2,35 @@ from functools import wraps
 from typing import Dict, List, Any, Callable
 from runner.logger import Logger
 from runner.database_manager import DatabaseManager
+import torch
+
+def get_device(device_preference: str = None) -> str:
+    """
+    智能选择最佳可用设备，优先级：CUDA > MPS > CPU
+    
+    Args:
+        device_preference (str, optional): 用户指定的设备偏好，如 "cuda:0", "mps", "cpu"
+    
+    Returns:
+        str: 设备名称
+    """
+    # 如果用户明确指定了设备，优先使用（但会验证是否可用）
+    if device_preference:
+        if device_preference.startswith("cuda") and torch.cuda.is_available():
+            return device_preference
+        elif device_preference == "mps" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            return "mps"
+        elif device_preference == "cpu":
+            return "cpu"
+        # 如果指定的设备不可用，继续自动选择
+    
+    # 自动选择最佳可用设备
+    if torch.cuda.is_available():
+        return "cuda:0"
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
 
 def node_decorator(check_schema_status: bool = False) -> Callable:
     """
