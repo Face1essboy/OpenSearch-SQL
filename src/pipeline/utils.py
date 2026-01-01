@@ -1,7 +1,6 @@
 from functools import wraps
 from typing import Dict, List, Any, Callable
 from runner.logger import Logger
-from runner.database_manager import DatabaseManager
 import torch
 
 def get_device(device_preference: str = None) -> str:

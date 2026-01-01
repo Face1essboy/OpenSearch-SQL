@@ -9,7 +9,9 @@ import torch
 import sqlite3
 import os
 import numpy as np
-from sentence_transformers import SentenceTransformer
+# 在导入 BGEM3FlagModel 之前应用修复
+from utils.bge_model_fix import *  # noqa
+from FlagEmbedding import BGEM3FlagModel
 from sklearn.metrics.pairwise import euclidean_distances
 import argparse
 import logging
@@ -71,7 +73,13 @@ def make_emb(db, DB_dir, DB_emb, col_values, bert_model, exclude_int=True):
             if len(col_vals) == 0:
                 continue
             # 生成embedding并保存
-            train_embeddings = bert_model.encode(col_vals, device=device)
+            # BGEM3FlagModel.encode() 不接受 device 和 show_progress_bar 参数，设备在初始化时已设置
+            train_embeddings_result = bert_model.encode(col_vals)
+            # BGEM3FlagModel.encode() 返回字典，键名是 'dense_vecs'
+            if isinstance(train_embeddings_result, dict):
+                train_embeddings = train_embeddings_result['dense_vecs']
+            else:
+                train_embeddings = train_embeddings_result
             DB_emb[table + "." + col] = train_embeddings
             col_values[table + "." + col] = col_vals
 
@@ -89,13 +97,14 @@ def load_emb(dbname, emb_dir="Bird/emb"):
     return data, col_vs
 
 # 主流程：批量生成所有数据库的特征embedding
-def make_emb_all(data_dir, database, bertmodel):
+def make_emb_all(data_dir, database, bert_model_path):
     emb_dir = os.path.join(data_dir, "emb")
     os.makedirs(emb_dir, exist_ok=True)
     database = os.path.join(data_dir, database)
     dev_json_path = os.path.join(data_dir, "data_preprocess", "dev.json")
     # 初始化sentence-transformer
-    bert_model = SentenceTransformer("BAAI/bge-m3")
+    # 获取当前路径
+    bert_model = BGEM3FlagModel(bert_model_path, use_fp16=True, devices=device)
     # 载入dev数据（含db_id）
     Q = pd.read_json(dev_json_path)
     DB_dir = database

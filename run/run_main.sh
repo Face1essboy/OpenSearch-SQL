@@ -38,6 +38,7 @@ fi
 # Define variables
 data_mode='dev' # Options: 'dev', 'train' 
 db_root_path=Bird #root directory # UPDATE THIS WITH THE PATH TO THE TARGET DATASET
+model_path=models/bge-m3
 start=0 #闭区间
 end=4  #开区间
 pipeline_nodes='generate_db_schema+extract_col_value+extract_query_noun+column_retrieve_and_other_info+candidate_generate+align_correct+vote+evaluation'
@@ -108,5 +109,6 @@ pipeline_setup='{
 ${PYTHON_BIN:-python3} -u ./src/main.py --data_mode ${data_mode} --db_root_path ${db_root_path}\
         --pipeline_nodes ${pipeline_nodes} --pipeline_setup "$pipeline_setup"\
         --start ${start} --end ${end} \
+        --model_path ${model_path} \
         # --use_checkpoint --checkpoint_nodes ${checkpoint_nodes} --checkpoint_dir ${checkpoint_dir}
   

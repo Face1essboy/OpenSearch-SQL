@@ -10,9 +10,12 @@ class DES:
         self.col_values = col_values
 
     def get_examples(self, target, topk=3):
-        target_embedding = self.model.encode(target,
-                                             show_progress_bar=False,
-                                            )
+        target_embedding_result = self.model.encode(target)
+        # BGEM3FlagModel.encode() 返回字典，键名是 'dense_vecs'
+        if isinstance(target_embedding_result, dict):
+            target_embedding = target_embedding_result['dense_vecs']
+        else:
+            target_embedding = target_embedding_result
 
         # find the most similar question in train dataset
         all_pair = []

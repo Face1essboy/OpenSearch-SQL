@@ -1,5 +1,6 @@
 import pandas as pd
 import re, sqlite3, os, chardet
+import numpy as np
 
 # 给定注释：查找 MySQL 格式的外键关系
 def find_foreign_keys_MYSQL_like(DATASET_JSON, db_name):
@@ -240,13 +241,26 @@ class db_agent:
         db_col = dict()  # 汇总所有表字段详细信息
 
         file_list = os.listdir(table_dir)  # 获取所有描述文件名
-        files_emb = model.encode(file_list, show_progress_bar=False)  # 对所有描述文件名做embedding
+        files_emb_result = model.encode(file_list)  # 对所有描述文件名做embedding
+        # BGEM3FlagModel.encode() 返回字典，键名是 'dense_vecs'
+        if isinstance(files_emb_result, dict):
+            files_emb = files_emb_result['dense_vecs']
+        else:
+            files_emb = files_emb_result
         for table in tables:
             if table[0] == 'sqlite_sequence':
                 # 跳过sqlite系统自增序列表
                 continue
             # 计算待查表文件名(table.csv)的embedding
-            target_file_emb = model.encode(table[0] + '.csv', show_progress_bar=False)
+            target_file_emb_result = model.encode(table[0] + '.csv')
+            # BGEM3FlagModel.encode() 返回字典，键名是 'dense_vecs'
+            if isinstance(target_file_emb_result, dict):
+                target_file_emb = target_file_emb_result['dense_vecs']
+            else:
+                target_file_emb = target_file_emb_result
+            # 确保维度正确（单个字符串返回一维数组）
+            if target_file_emb.ndim == 1:
+                target_file_emb = target_file_emb.reshape(1, -1)
             # 与所有表描述文件做相似度比对
             files_sim = (files_emb @ target_file_emb.T)
             # 若相似度>0.9, 选用最相似的csv（有可能拼写/命名存在误差）

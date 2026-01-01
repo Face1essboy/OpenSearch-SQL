@@ -1,0 +1,33 @@
+[
+  {
+    "category": "metric_match",
+    "term": "执行率",
+    "definition": "预算执行的百分比进度",
+    "logic_bridge": {
+      "formula": "actual_amount / budget_amount * 100",
+      "tables": ["t_budget"],
+      "columns": ["t_budget.actual_amount", "t_budget.budget_amount"]
+    },
+    "tags": ["财政", "考核"]
+  },
+  {
+    "category": "value_match",
+    "term": "高新企业",
+    "mapping": {
+      "table": "enterprise_info",
+      "column": "ent_type_code",
+      "values": ["H01", "H02", "H05"],
+      "description": "高新技术企业分类代码包含H01, H02, H05"
+    }
+  },
+  {
+    "category": "sematic_match",
+    "term": "三公经费",
+    "definition": "三公经费是指政府部门在因公出国(境)经费、公务用车购置及运行费、公务接待费产生的消费支出",
+    "semantic_bridge": {
+      "tables": ["t_budget"],
+      "columns": ["t_budget.car_fee", "t_budget.travel_fee", "t_budget.reception_fee"],
+      "description": "因公出国(境)经费, 公务用车购置及运行费, 公务接待费"
+    }
+  }
+]

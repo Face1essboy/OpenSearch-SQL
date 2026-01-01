@@ -15,21 +15,21 @@ class DatabaseManager:
     _instance = None
     _lock = Lock()
 
-    def __new__(cls, db_mode=None,db_root_path=None,db_id=None):
+    def __new__(cls, db_mode=None,db_root_path=None,db_id=None,model_path=None):
         if (db_mode is not None) and (db_root_path is not None) and(db_id is not None):
             with cls._lock:
                 if cls._instance is None:
                     cls._instance = super(DatabaseManager, cls).__new__(cls)
-                    cls._instance._init(db_mode, db_root_path,db_id)
+                    cls._instance._init(db_mode, db_root_path,db_id,model_path)
                 elif cls._instance.db_id != db_id:
-                    cls._instance._init(db_mode,db_root_path,db_id)
+                    cls._instance._init(db_mode,db_root_path,db_id,model_path)
                 return cls._instance
         else:
             if cls._instance is None:
                 raise ValueError("DatabaseManager instance has not been initialized yet.")
             return cls._instance
 
-    def _init(self, db_mode: str, db_root_path:str,db_id: str):
+    def _init(self, db_mode: str, db_root_path:str,db_id: str,model_path: str):
         """
         Initializes the DatabaseManager instance.
 
@@ -40,6 +40,7 @@ class DatabaseManager:
         self.db_mode = db_mode
         self.db_root_path=db_root_path
         self.db_id = db_id
+        self.model_path = model_path
         self._set_paths()
 
     def _set_paths(self):

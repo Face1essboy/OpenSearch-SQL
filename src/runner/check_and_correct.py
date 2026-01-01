@@ -504,8 +504,22 @@ ERROR:{",".join(origin_f)} 不符合要求, 请使用 JOIN ORDER BY LIMIT 形式
                 continue
             tmp_col = dic_v.get(val)
             if not tmp_col and len(l_v):  # 未知值，尝试BERT相似度找最像的修正
-                val_close = self.bert_model.encode(val, show_progress_bar=False) @ self.bert_model.encode(
-                    l_v, show_progress_bar=False).T
+                val_emb_result = self.bert_model.encode(val)
+                l_v_emb_result = self.bert_model.encode(l_v)
+                # BGEM3FlagModel.encode() 返回字典，键名是 'dense_vecs'
+                if isinstance(val_emb_result, dict):
+                    val_emb = val_emb_result['dense_vecs']
+                else:
+                    val_emb = val_emb_result
+                if isinstance(l_v_emb_result, dict):
+                    l_v_emb = l_v_emb_result['dense_vecs']
+                else:
+                    l_v_emb = l_v_emb_result
+                # 确保维度正确
+                import numpy as np
+                if val_emb.ndim == 1:
+                    val_emb = val_emb.reshape(1, -1)
+                val_close = val_emb @ l_v_emb.T
                 if val_close.max() > 0.95:
                     val_new = l_v[val_close.argmax()]
                     sql = sql.replace(f"'{val}'", f"'{val_new}'")

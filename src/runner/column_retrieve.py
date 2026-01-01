@@ -105,18 +105,29 @@ class ColumnRetriever:
         :return: set[str]，选中的相关列名。
         """
         # 列名转向量
-        l_emb = self.bert_model.encode(
-            l,
-            convert_to_tensor=True,
-            show_progress_bar=False
-        )
+        # BGEM3FlagModel.encode() 不支持 convert_to_tensor 和 show_progress_bar 参数
+        l_emb_result = self.bert_model.encode(l)
+        # BGEM3FlagModel.encode() 返回字典，键名是 'dense_vecs'
+        if isinstance(l_emb_result, dict):
+            l_emb = l_emb_result['dense_vecs']
+        else:
+            l_emb = l_emb_result
+        # 转换为tensor（如果需要）
+        import torch
+        if not isinstance(l_emb, torch.Tensor):
+            l_emb = torch.tensor(l_emb)
         num_pick = min(4, len(l))  # 最多保留前4个相关列（可调优）
         # 检索短语转向量并计算匹配分数（问题短语矩阵 * 列向量矩阵T）
-        m_ans = self.bert_model.encode(
-            ext_a,
-            convert_to_tensor=True,
-            show_progress_bar=False
-        ) @ l_emb.T
+        m_ans_result = self.bert_model.encode(ext_a)
+        # BGEM3FlagModel.encode() 返回字典，键名是 'dense_vecs'
+        if isinstance(m_ans_result, dict):
+            m_ans = m_ans_result['dense_vecs']
+        else:
+            m_ans = m_ans_result
+        # 转换为tensor（如果需要）
+        if not isinstance(m_ans, torch.Tensor):
+            m_ans = torch.tensor(m_ans)
+        m_ans = m_ans @ l_emb.T
         all_col = self.same_pick(l, m_ans, num_pick)
         return all_col
 

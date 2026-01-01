@@ -25,6 +25,16 @@ def extract_col_value(task: Any, execution_history: Dict[str, Any]) -> Dict[str,
     
 
     all_info = get_last_node_result(execution_history, "generate_db_schema")["db_list"]
+
+    # todo add rag for extract_col_value to get dynamic schema and db_list
+    # 论文里面不这么写，只是代码里面简单这么弄。比如论文里面会根据rag搜索结果，结合schema和db_list，获取动态的Schema
+    # 动态 Schema 组装 (Dynamic Assembly)
+    # 这是你最核心的创新步骤。将检索到的碎皮拼成一个给 LLM 的专属 M-Schema：
+    # 别名替换： 将原始晦涩的列名（如 f_01）替换为 f_01 (Alias: actual_amt)。
+    # 虚拟列注入： 在 Schema 中手动插入一列：execution_rate (Formula: actual_amt / budget_amt * 100)。
+    # 值提示注入： 在对应列的 Description 中注明：Region (Note: '东南地区' covers values ['广东', '福建', '浙江'])。
+    hint = rag_search(task.question)
+
     key_col_des_raw = get_des_ans(chat_model,
                                 db_check_prompts().extract_prompt,
                                 df_fewshot["extract"][task.question_id]['prompt'],
@@ -35,7 +45,8 @@ def extract_col_value(task: Any, execution_history: Dict[str, Any]) -> Dict[str,
                                 temperature=config["temperature"])
 
     response = {
-        "key_col_des_raw": key_col_des_raw
+        "key_col_des_raw": key_col_des_raw,
+        "rag_search_info": hint
     }
     return response
 
@@ -61,3 +72,6 @@ def get_des_ans(chat_model,
                                         debug=debug).replace('```', '')
 
     return pre_col_values
+
+def rag_search(question):
+    return "None"

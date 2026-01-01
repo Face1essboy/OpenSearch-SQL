@@ -107,13 +107,17 @@ new_extract_prompt = """/* Some extract examples are provided based on similar p
 /* Database schema */
 {db_info}
 
+/* Retrieved relevant column and value information */
+{hint}
+
 Attention:
 1. if the question have when\where\which, pay attention to pick table.column related to time, location and name in #columns
 2. Please answer the question in the following format without any other content:
+3. Please consider the retrieved relevant column and value information when answering the question.
 ```
-#reason: Analysis of which columns and values might be relevant to the question. Note that when dealing with questions about time, who, which, what, etc., you should keep column related to time, names, and locations in the #column.(format: The question query xxx, the related column include table.column, the values include values)
-#columns: The top 10 columns relevant to the question( format: table.column_1, table.column_2 ...)
-#values: Potential filter values that the question might query(format: "value1", "value2" ...)
+#reason: Analysis of which columns and values might be relevant to the question. Note that when dealing with questions about time, who, which, what, etc., you should keep column related to time, names, and locations in the #column.(format: The question query xxx, the related column include table.column, the values include values) and the retrieved relevant column and value information
+#columns: The top 10 columns relevant to the question( format: table.column_1, table.column_2 ...) and the retrieved relevant column and value information
+#values: Potential filter values that the question might query(format: "value1", "value2" ...) and the retrieved relevant column and value information
 ```
 /* Answer the following: {query} */
 """

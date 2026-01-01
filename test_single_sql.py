@@ -52,7 +52,7 @@ class TestRunManager(RunManager):
         log_to_both(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         log_to_both(f"{'='*80}\n")
 
-        database_manager = DatabaseManager(db_mode=self.args.data_mode, db_root_path=self.args.db_root_path, db_id=task.db_id)
+        database_manager = DatabaseManager(db_mode=self.args.data_mode, db_root_path=self.args.db_root_path, db_id=task.db_id, model_path=self.args.model_path)
         
         pipeline_manager = PipelineManager(json.loads(self.args.pipeline_setup))
         execution_history = self.load_checkpoint(task.db_id, task.question_id)
@@ -190,6 +190,7 @@ def main():
     parser.add_argument('--pipeline_nodes', type=str, 
                         default='generate_db_schema+extract_col_value+extract_query_noun+column_retrieve_and_other_info+candidate_generate+align_correct+vote+evaluation', 
                         help="Pipeline nodes configuration.")
+    parser.add_argument('--model_path', type=str, default='models/bge-m3', help="Path to the model file.")
     parser.add_argument('--pipeline_setup', type=str, default=json.dumps(default_setup), help="Pipeline setup in JSON format.")
     parser.add_argument('--use_checkpoint', action='store_true', help="Flag to use checkpointing.")
     parser.add_argument('--checkpoint_nodes', type=str, required=False, help="Checkpoint nodes configuration.")

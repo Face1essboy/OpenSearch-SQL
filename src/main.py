@@ -51,6 +51,7 @@ if __name__ == '__main__':
     args_parser.add_argument('--log_level', type=str, default='warning', help="Logging level.")
     args_parser.add_argument('--start', type=int, default=0, help="Start point")
     args_parser.add_argument('--end', type=int, default=1, help="End point")
+    args_parser.add_argument('--model_path', type=str, required=True, help="Path to the model file.")
     # 解析参数
     args = args_parser.parse_args()
     # 记录当前运行开始时间，用于结果文件夹命名

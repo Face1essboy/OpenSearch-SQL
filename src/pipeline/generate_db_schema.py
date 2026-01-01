@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
+from FlagEmbedding import BGEM3FlagModel
 from pipeline.utils import node_decorator, get_device
 from pipeline.pipeline_manager import PipelineManager
 from runner.database_manager import DatabaseManager
@@ -26,7 +27,7 @@ def generate_db_schema(task: Any, execution_history: Dict[str, Any]) -> Dict[str
     # [关键注释] — 初始化所需的 bert_model
     # 从配置读取设备，如果没有则自动选择最佳设备（CUDA > MPS > CPU）
     device = get_device(config.get("device"))
-    bert_model = SentenceTransformer("BAAI/bge-m3", device=device)
+    bert_model = BGEM3FlagModel(paths.model_path, use_fp16=True, devices=device)
 
     # [关键注释] — 路径参数
     db_json_dir = paths.db_json            # 数据库结构/表结构描述
