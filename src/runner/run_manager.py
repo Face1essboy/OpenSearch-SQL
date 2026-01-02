@@ -130,7 +130,7 @@ class RunManager:
         """
         # 注意：本函数用于进程池或顺序遍历均可
         # 数据库管理器（单例模式，负责数据库缓存等）
-        database_manager = DatabaseManager(db_mode=self.args.data_mode, db_root_path=self.args.db_root_path, db_id=task.db_id)
+        database_manager = DatabaseManager(db_mode=self.args.data_mode, db_root_path=self.args.db_root_path, db_id=task.db_id,model_path=self.args.model_path)
         # 日志对象，每题有独立日志
         logger = Logger(db_id=task.db_id, question_id=task.question_id, result_directory=self.result_directory)
         logger._set_log_level(self.args.log_level)

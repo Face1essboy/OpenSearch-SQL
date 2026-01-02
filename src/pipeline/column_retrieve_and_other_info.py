@@ -7,7 +7,7 @@ from pathlib import Path
 from pipeline.utils import node_decorator, get_last_node_result, get_device
 from pipeline.pipeline_manager import PipelineManager
 from runner.database_manager import DatabaseManager
-from sentence_transformers import SentenceTransformer
+from FlagEmbedding import BGEM3FlagModel
 from llm.model import model_chose
 from llm.db_conclusion import find_foreign_keys_MYSQL_like
 from llm.prompts import *
@@ -37,7 +37,7 @@ def column_retrieve_and_other_info(task: Any, execution_history: Dict[str, Any])
     chat_model = model_chose(node_name, config["engine"])  # 选择LLM模型
     # 从配置读取设备，如果没有则自动选择最佳设备（CUDA > MPS > CPU）
     device = get_device(config.get("device"))
-    bert_model = SentenceTransformer("BAAI/bge-m3", device=device)        # 句向量模型用于列/值语义检索
+    bert_model = BGEM3FlagModel(paths.model_path, use_fp16=True, devices=device)        # 句向量模型用于列/值语义检索
 
     # ========================== 数据准备 ==============================
     all_db_col = get_last_node_result(execution_history, "generate_db_schema")["db_col_dic"] # 数据库所有列映射 {col: [desc, ...], ...}

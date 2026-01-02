@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List
 from pathlib import Path
-from sentence_transformers import SentenceTransformer
+from FlagEmbedding import BGEM3FlagModel
 from pipeline.utils import node_decorator, get_last_node_result, get_device
 from pipeline.pipeline_manager import PipelineManager
 from runner.database_manager import DatabaseManager
@@ -40,7 +40,7 @@ def align_correct(task: Any, execution_history: List[Dict[str, Any]]) -> Dict[st
     prompts_template = db_check_prompts()                                  # 各类LLM提示词模板
     # 从配置读取设备，如果没有则自动选择最佳设备（CUDA > MPS > CPU）
     device = get_device(config.get("device"))
-    bert_model = SentenceTransformer("BAAI/bge-m3", device=device)         # 初始化句向量模型，用于软判与对齐
+    bert_model = BGEM3FlagModel(paths.model_path, use_fp16=True, devices=device)         # 初始化句向量模型，用于软判与对齐
 
     # ========== 二、加载fewshot样例与修正知识库 ==========
     with open(fewshot_path, "r") as f:

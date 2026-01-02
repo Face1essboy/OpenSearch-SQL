@@ -9,7 +9,7 @@ import torch
 import sqlite3
 import os
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from FlagEmbedding import BGEM3FlagModel
 from sklearn.metrics.pairwise import euclidean_distances
 import argparse
 import logging
@@ -89,13 +89,13 @@ def load_emb(dbname, emb_dir="Bird/emb"):
     return data, col_vs
 
 # 主流程：批量生成所有数据库的特征embedding
-def make_emb_all(data_dir, database, bertmodel):
+def make_emb_all(data_dir, database, bert_model_path):
     emb_dir = os.path.join(data_dir, "emb")
     os.makedirs(emb_dir, exist_ok=True)
     database = os.path.join(data_dir, database)
     dev_json_path = os.path.join(data_dir, "data_preprocess", "dev.json")
-    # 初始化sentence-transformer
-    bert_model = SentenceTransformer("BAAI/bge-m3")
+    # 初始化FlagEmbeddingModel
+    bert_model = BGEM3FlagModel(bert_model_path, use_fp16=True, devices=device)
     # 载入dev数据（含db_id）
     Q = pd.read_json(dev_json_path)
     DB_dir = database
