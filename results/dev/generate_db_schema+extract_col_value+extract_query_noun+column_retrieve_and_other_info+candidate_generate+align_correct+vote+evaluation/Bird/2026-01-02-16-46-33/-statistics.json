@@ -1,0 +1,54 @@
+{
+    "counts": {
+        "candidate_generate": {
+            "correct": 1,
+            "incorrect": 0,
+            "error": 0,
+            "total": 1
+        },
+        "align_correct": {
+            "correct": 1,
+            "incorrect": 0,
+            "error": 0,
+            "total": 1
+        },
+        "vote": {
+            "correct": 1,
+            "incorrect": 0,
+            "error": 0,
+            "total": 1
+        }
+    },
+    "ids": {
+        "candidate_generate": {
+            "correct": [
+                [
+                    "california_schools",
+                    0
+                ]
+            ],
+            "incorrect": [],
+            "error": []
+        },
+        "align_correct": {
+            "correct": [
+                [
+                    "california_schools",
+                    0
+                ]
+            ],
+            "incorrect": [],
+            "error": []
+        },
+        "vote": {
+            "correct": [
+                [
+                    "california_schools",
+                    0
+                ]
+            ],
+            "incorrect": [],
+            "error": []
+        }
+    }
+}
