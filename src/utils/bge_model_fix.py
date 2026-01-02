@@ -1,6 +1,9 @@
 """
 修复 BGEM3FlagModel 加载问题的 monkey patch
 需要在导入 BGEM3FlagModel 之前应用此修复
+
+问题：AutoTokenizer.from_pretrained() 在某些情况下会报错 'dict' object has no attribute 'model_type'
+解决：直接使用 XLMRobertaTokenizer 来加载 tokenizer
 """
 from transformers import AutoTokenizer, XLMRobertaTokenizer
 
@@ -23,4 +26,3 @@ def patched_from_pretrained(cls, pretrained_model_name_or_path, *args, **kwargs)
 
 # 应用 monkey patch
 AutoTokenizer.from_pretrained = classmethod(patched_from_pretrained)
-

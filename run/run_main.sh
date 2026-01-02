@@ -40,7 +40,8 @@ data_mode='dev' # Options: 'dev', 'train'
 db_root_path=Bird #root directory # UPDATE THIS WITH THE PATH TO THE TARGET DATASET
 model_path=models/bge-m3
 start=0 #闭区间
-end=4  #开区间
+end=1534 #开区间
+# end=1533  #开区间
 pipeline_nodes='generate_db_schema+extract_col_value+extract_query_noun+column_retrieve_and_other_info+candidate_generate+align_correct+vote+evaluation'
 # pipeline指当前工作流的节点组合
 # checkpoint_nodes='generate_db_schema,extract_col_value,extract_query_noun'
@@ -57,7 +58,7 @@ pipeline_nodes='generate_db_schema+extract_col_value+extract_query_noun+column_r
     # evaluation
 
 # engine1='gpt-4o-0513'
-engine1='qwen-plus'
+engine1='qwen3-coder-plus'
 engine2='gpt-3.5-turbo-0125'
 engine3='gpt-4-turbo'
 engine4='claude-3-opus-20240229'
@@ -92,13 +93,13 @@ pipeline_setup='{
     "candidate_generate":{
         "engine": "'${engine1}'",
         "temperature": 0.7,  
-        "n":3,
+        "n":10,
         "return_question":"True",
         "single":"False"
     },
     "align_correct":{
         "engine": "'${engine1}'",
-        "n":3,
+        "n":20,
         "bert_model": "your_bert_model_path:e.g. /opensearch-sql/bge",  
         "device":"cuda",
         "align_methods":"style_align+function_align+agent_align"

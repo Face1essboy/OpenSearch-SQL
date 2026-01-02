@@ -6,7 +6,7 @@ train_table=train/train_tables.json  # 69 train data
 dev_database=dev/dev_databases #dev database directory
 fewshot_llm=qwen
 DAIL_SQL=Bird/bird_dev.json     #dailsql json file 
-bert_model=model/ 
+bert_model=models/bge-m3
 
 # python -u src/database_process/data_preprocess.py \
 #     --db_root_directory "${db_root_directory}" \

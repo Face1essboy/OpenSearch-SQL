@@ -2,6 +2,8 @@ import logging
 from typing import Any, Dict
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
+# 在导入 BGEM3FlagModel 之前应用修复
+from utils.bge_model_fix import *  # noqa
 from FlagEmbedding import BGEM3FlagModel
 from pipeline.utils import node_decorator, get_device
 from pipeline.pipeline_manager import PipelineManager

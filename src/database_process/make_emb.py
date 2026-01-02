@@ -9,6 +9,12 @@ import torch
 import sqlite3
 import os
 import numpy as np
+import sys
+from pathlib import Path
+# 添加 src 目录到 Python 路径，以便导入 utils
+src_path = Path(__file__).parent.parent
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 # 在导入 BGEM3FlagModel 之前应用修复
 from utils.bge_model_fix import *  # noqa
 from FlagEmbedding import BGEM3FlagModel
